@@ -1,0 +1,15 @@
+.special-btn {
+    background: linear-gradient(rgba(52, 149, 141, 1), rgba(180, 202, 160, 1));
+    border: 0px !important;
+    padding: 15px;
+    padding-right: 20px;
+    padding-left: 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 1;
+    font-family: Poppins;
+}
+
+.special-btn:hover {
+    opacity: 0.8;
+}
