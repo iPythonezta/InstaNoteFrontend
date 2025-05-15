@@ -22,9 +22,11 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
+        let usr =username;
+        usr = usr.toLowerCase();
         try {
             const response = await axios.post('http://localhost:8080/auth/login', {
-                username,
+                username:usr,
                 password
             });
 
@@ -63,10 +65,10 @@ const Login = () => {
                 <Navbar className="navbar justify-content-between mb-3">
                     <Navbar.Brand className="name" href='/'>InstaNote AI</Navbar.Brand>
                     <Container style={{ justifyContent: 'flex-end' }}>
-                        <Button className="special-btn" style={{ marginRight: '30px' }}>
+                        <Button className="special-btn" style={{ marginRight: '30px' }} onClick={()=>navigate('/login')}>
                             Login
                         </Button>
-                        <Button className="special-btn">Register</Button>
+                        <Button className="special-btn" onClick={()=>navigate('/register')}>Register</Button>
                     </Container>
                 </Navbar>
                 {
