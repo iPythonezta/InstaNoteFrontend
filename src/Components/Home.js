@@ -1,17 +1,74 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Form, Button, Navbar } from 'react-bootstrap';
+import { Container, Form, Button, Navbar, Spinner } from 'react-bootstrap';
 import { useUserContext } from '../ContextApi';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './home.css';
 
 const Home = () => {
+  const { login, setLogin, user, token, setToken, setUser, loading, setLoading } = useUserContext();
+  const [notes, setNotes] = useState([]);
+  const [isPlaylist, setIsPlaylist] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const notesPerPage = 5;
 
-  const {login, setLogin, user, setToken, setUser} = useUserContext();
+  const fetchAllNotes = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/notes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setNotes(response.data.map(item => ({
+        id: item.id,
+        ...JSON.parse(item.notes.trim())
+      })));
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:8080/api/generate-notes', {
+        url: videoUrl,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      navigate(`/notes/${response.data.id}`);
+      setVideoUrl('');
+      setIsPlaylist(false);
+    } catch (error) {
+      console.error('Error adding note:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAllNotes();
+  }, []);
+
   useEffect(() => {
     if (!login) {
       navigate('/login');
     }
-  }, [login])
+  }, [login]);
+
+  // Pagination logic
+  const sortedNotes = [...notes].sort((a, b) => b.id - a.id);
+  const indexOfLastNote = currentPage * notesPerPage;
+  const indexOfFirstNote = indexOfLastNote - notesPerPage;
+  const currentNotes = sortedNotes.slice(indexOfFirstNote, indexOfLastNote);
+  const totalPages = Math.ceil(sortedNotes.length / notesPerPage);
+
   return (
     <Container
       fluid
@@ -21,8 +78,7 @@ const Home = () => {
         display: 'flex',
         flexDirection: 'column',
         maxWidth: '100vw',
-        maxHeight: '100vh',
-        overflow: 'hidden'
+        overflow: 'auto'
       }}
     >
       <div className="upper-portion">
@@ -30,41 +86,79 @@ const Home = () => {
           <Navbar.Brand className="name" href='/'>InstaNote AI</Navbar.Brand>
           <Container style={{ justifyContent: 'flex-end' }}>
             {login && <div className="user">Hi, {user} </div>}
-            <Button className="special-btn" onClick={()=>{setLogin(false); setToken(''); navigate('/login'); localStorage.removeItem('token'); setUser('');}}>Logout</Button>
-        </Container>
+            <Button className="special-btn" onClick={() => {
+              setLogin(false);
+              setToken('');
+              localStorage.removeItem('token');
+              setUser('');
+              navigate('/login');
+            }}>Logout</Button>
+          </Container>
         </Navbar>
 
-        <Form className="bar d-flex gap-2">
-          <Form.Control
-            id="video-url"
-            type="url"
-            placeholder="Enter youtube video link."
-          />
-          <Button id="submit" type="submit">Generate</Button>
-        </Form>
-        <div style={{margin:'0 auto'}}>
-          <p className='text-center text-muted'>
-            Enter the URL of the YouTube video/playlist you want to study.
-          </p>
-        </div>
-
+        {loading ? (
+          <Container className="d-flex justify-content-center align-items-center" style={{ height: '80vh', marginTop: '-50px' }}>
+            <Spinner animation="border" variant="primary" style={{ height: '100px', width: '100px' }} />
+          </Container>
+        ) : (
+          <>
+            <Form className="bar d-flex gap-2 align-items-center">
+              <Form.Control
+                id="video-url"
+                type="url"
+                placeholder="Enter youtube video link."
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+              />
+              <Button id="submit" type="submit" onClick={handleSubmit}>Generate</Button>
+            </Form>
+            <Container className='text-center' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '18px' }}>
+              <Form.Check
+                type="checkbox"
+                id="is-playlist"
+                label="Is Playlist"
+                className="text-nowrap"
+                checked={isPlaylist}
+                onChange={(e) => setIsPlaylist(e.target.checked)}
+                style={{ marginTop: '-20px', width: 'fit-content' }}
+              />
+            </Container>
+          </>
+        )}
         <div className="filler mt-3"></div>
       </div>
 
-      <div className="lower-portion" style={{ minHeight: '100vh' }}>
-        <h5 className="m-3" style={{padding:'10px', alignSelf:'center'}}>Use History</h5>
-        <div id="note-container" style={{ marginLeft: '10px' }}>
-          {/* <div className="previous-note border" style={{ borderRadius: '10px' }}>
-            <span>
-              <strong>Photosynthesis Explained - CrashCourse</strong>
-            </span>
-          </div> */}
+      <div className="lower-portion">
+        <h5 className="m-3" style={{ padding: '10px', alignSelf: 'center' }}>Use History</h5>
+        <div id="note-container" style={{ marginLeft: '10px', alignSelf: 'center' }}>
+          {currentNotes.map((note) => (
+            <div className="previous-note border mt-3" style={{ borderRadius: '10px' }} key={note.id} onClick={() => navigate(`/notes/${note.id}`)}>
+              <span><strong>{note.title}</strong></span>
+              <p>{note.description}</p>
+            </div>
+          ))}
         </div>
-        <div className="filler">
-          <p className='text-center text-muted'>
-            No history yet. Start by entering a video URL.
-          </p>
-        </div>
+
+        {sortedNotes.length === 0 && (
+          <div className="filler">
+            <p className='text-center text-muted'>
+              No history yet. Start by entering a video URL.
+            </p>
+          </div>
+        )}
+
+        {/* Pagination controls */}
+        {sortedNotes.length > notesPerPage && (
+          <div className="d-flex justify-content-center mt-4 mb-5 gap-3">
+            <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <span className="align-self-center">Page {currentPage} of {totalPages}</span>
+            <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+              Next
+            </Button>
+          </div>
+        )}
       </div>
     </Container>
   );
