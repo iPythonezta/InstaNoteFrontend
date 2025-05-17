@@ -11,6 +11,7 @@ const Home = () => {
   const [isPlaylist, setIsPlaylist] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading2, setLoading2] = useState(false);
   const notesPerPage = 5;
 
   const fetchAllNotes = async () => {
@@ -48,6 +49,22 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this note?");
+    if (!confirmDelete) return;
+    setLoading2(true);
+
+    try {
+      await axios.delete(`http://localhost:8080/api/notes/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotes(prev => prev.filter(note => note.id !== id));
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+    setLoading2(false);
   };
 
   const navigate = useNavigate();
@@ -129,35 +146,60 @@ const Home = () => {
       </div>
 
       <div className="lower-portion">
-        <h5 className="m-3" style={{ padding: '10px', alignSelf: 'center' }}>Use History</h5>
-        <div id="note-container" style={{ marginLeft: '10px', alignSelf: 'center' }}>
-          {currentNotes.map((note) => (
-            <div className="previous-note border mt-3" style={{ borderRadius: '10px' }} key={note.id} onClick={() => navigate(`/notes/${note.id}`)}>
-              <span><strong>{note.title}</strong></span>
-              <p>{note.description}</p>
+        {loading2 ? (
+          <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '50vh' }}>
+            <Spinner animation="border" variant="primary" style={{ height: '60px', width: '60px' }} />
+            <p className="mt-3 text-muted">Deleting...</p>
+          </div>
+        ) : (
+          <>
+            <h5 className="m-3" style={{ padding: '10px', alignSelf: 'center' }}>Use History</h5>
+            <div id="note-container" style={{ marginLeft: '10px', alignSelf: 'center' }}>
+              {currentNotes.map((note) => (
+                <div
+                  className="previous-note border mt-3"
+                  style={{ borderRadius: '10px', cursor: 'pointer' }}
+                  key={note.id}
+                  onClick={(e) => {
+                    if (e.target.classList.contains('delete-btn')) return;
+                    navigate(`/notes/${note.id}`);
+                  }}
+                >
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(note.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                  <span><strong>{note.title}</strong></span>
+                  <p>{note.description}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {sortedNotes.length === 0 && (
-          <div className="filler">
-            <p className='text-center text-muted'>
-              No history yet. Start by entering a video URL.
-            </p>
-          </div>
-        )}
+            {sortedNotes.length === 0 && (
+              <div className="filler">
+                <p className='text-center text-muted'>
+                  No history yet. Start by entering a video URL.
+                </p>
+              </div>
+            )}
 
-        {/* Pagination controls */}
-        {sortedNotes.length > notesPerPage && (
-          <div className="d-flex justify-content-center mt-4 mb-5 gap-3">
-            <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-              Previous
-            </Button>
-            <span className="align-self-center">Page {currentPage} of {totalPages}</span>
-            <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
-              Next
-            </Button>
-          </div>
+            {sortedNotes.length > notesPerPage && (
+              <div className="d-flex justify-content-center mt-4 mb-5 gap-3">
+                <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                  Previous
+                </Button>
+                <span className="align-self-center">Page {currentPage} of {totalPages}</span>
+                <Button variant="secondary" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </Container>

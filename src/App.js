@@ -11,6 +11,7 @@ import { useUserContext } from './ContextApi';
 import { useEffect } from 'react';
 import NotesPage from './Components/NotesPage';
 import axios from 'axios';
+import QuizComponent from './Components/QuizComponent';
 
 function App() {
 
@@ -49,6 +50,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path='/register' element={<Register />} /> 
           <Route path="/notes/:id" element={<NotesPage />} />
+          <Route path="/quiz/:id" element={<QuizComponent />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </BrowserRouter>

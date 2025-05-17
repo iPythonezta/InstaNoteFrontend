@@ -154,3 +154,10 @@ body {
   justify-content: flex-start;
   align-items: center;
 }
+
+.quiz-modal-content {
+  background: linear-gradient(to right, rgba(103, 4, 169, 1) 0%, rgba(6, 116, 206, 1) 42%, rgba(170, 39, 188, 1) 80%, rgba(170, 39, 188, 1) 100%);
+  color: white;
+  border-radius: 20px;
+  padding: 20px;
+}

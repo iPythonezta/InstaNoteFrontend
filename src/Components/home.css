@@ -1,3 +1,30 @@
 body {
     overflow: hidden;
 }
+
+.previous-note {
+  position: relative;
+  padding: 10px;
+  transition: box-shadow 0.2s ease;
+}
+
+.previous-note:hover {
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+}
+
+.delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: red;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: none;
+}
+
+.previous-note:hover .delete-btn {
+  display: block;
+}
